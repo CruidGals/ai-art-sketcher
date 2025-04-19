@@ -10,6 +10,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Make sure it uses output folders
+app.use('/outputs', express.static('outputs'));
+
 // Create the replicate instance
 const replicate = new Replicate({
     auth: process.env.REPLICATE_API_TOKEN
