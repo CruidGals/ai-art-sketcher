@@ -77,6 +77,7 @@ app.post('/generate', async (req, res) => {
 
 app.get('/test', (req, res) => {
     const filePath = path.join(outputDir, 'outputs/example.png');
+    console.log(`Filepath: ${filePath}`);
     res.send(filePath);
 });
 
