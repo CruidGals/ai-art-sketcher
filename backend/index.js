@@ -4,7 +4,6 @@ const cors = require('cors');
 const Replicate = require('replicate');
 const axios = require('axios');
 const { writeFile } = require('fs').promises;
-const path = require('path');
 
 // Start the app
 const app = express();
@@ -63,7 +62,8 @@ app.post('/test', async (req, res) => {
         const response = await fetch(img_url);
         if (!response.ok) throw new Error('Failed to download image');
 
-        const buffer = await response.buffer();
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
         const filename = `outputs/output_${Date.now()}_${index}.png`;
         const fullPath = path.join(__dirname, filename);
@@ -78,8 +78,6 @@ app.post('/test', async (req, res) => {
         res.status(500).json({ error: 'Something went wrong' });
     }
 });
-
-app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
