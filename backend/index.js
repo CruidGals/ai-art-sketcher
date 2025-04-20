@@ -65,13 +65,15 @@ app.post('/test', async (req, res) => {
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        const filename = `outputs/output_${Date.now()}_${index}.png`;
+        const filename = `outputs/output_${Date.now()}_1.png`;
         const fullPath = path.join(__dirname, filename);
+
+        let fileUrls = [];
 
         await writeFile(fullPath, buffer);
         console.log(`Saved} ${filename}`);
         fileUrls.push(`https://${process.env.KOYEB_APP_NAME}.koyeb.app/${filename}`);
-        res.status(200).json({ fileUrl });
+        res.status(200).json({ fileUrls });
 
     } catch (error) {
         console.error(error);
