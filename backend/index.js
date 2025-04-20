@@ -56,30 +56,28 @@ app.post('/generate', async (req, res) => {
     }
 });
 
-app.post('/test', async (req, res) => {
-    const img_url = 'https://i.ibb.co/Z64WVNt0/cat.png';
+// app.post('/test', async (req, res) => {
+//     const imagePath = 'outputs/example.png';
 
-    try {
-        // Download the image first
-        const response = await fetch(img_url);
-        if (!response.ok) throw new Error('Failed to download image');
+//     try {
         
-        // Get image into buffer form
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        
-        // Output into filePath
-        const filename = `outputs/output_${Date.now()}_1.png`;
-        const fullPath = path.join(outputDir, filename);
+//         // Output into filePath
+//         const filename = `outputs/output_${Date.now()}_1.png`;
+//         const fullPath = path.join(outputDir, filename);
 
-        await writeFile(fullPath, buffer);
-        console.log(`Saved ${filename}`);
-        res.json({ filePath: fullPath });
+//         await writeFile(fullPath, buffer);
+//         console.log(`Saved ${filename}`);
+//         res.json({ filePath: fullPath });
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Something went wrong' });
-    }
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Something went wrong' });
+//     }
+// });
+
+app.get('/test', (req, res) => {
+    const filePath = path.join(outputDir, 'outputs/example.png');
+    res.send(filePath);
 });
 
 const PORT = process.env.PORT || 3000;
