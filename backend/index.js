@@ -4,6 +4,7 @@ const cors = require('cors');
 const Replicate = require('replicate');
 const axios = require('axios');
 const { writeFile } = require('fs').promises;
+const path = require('path');
 
 // Start the app
 const app = express();
