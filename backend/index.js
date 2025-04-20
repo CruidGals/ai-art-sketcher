@@ -12,7 +12,8 @@ app.use(cors());
 app.use(express.json());
 
 // Make sure it uses output folders
-app.use('/outputs', express.static('outputs'));
+const outputDir = path.resolve(__dirname);
+app.use('/outputs', express.static(outputDir));
 
 // Create the replicate instance
 const replicate = new Replicate({
@@ -62,19 +63,18 @@ app.post('/test', async (req, res) => {
         // Download the image first
         const response = await fetch(img_url);
         if (!response.ok) throw new Error('Failed to download image');
-
+        
+        // Get image into buffer form
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-
+        
+        // Output into filePath
         const filename = `outputs/output_${Date.now()}_1.png`;
-        const fullPath = path.join(__dirname, filename);
-
-        let fileUrls = [];
+        const fullPath = path.join(outputDir, filename);
 
         await writeFile(fullPath, buffer);
-        console.log(`Saved} ${filename}`);
-        fileUrls.push(`https://${process.env.KOYEB_APP_NAME}.koyeb.app/${filename}`);
-        res.status(200).json({ fileUrls });
+        console.log(`Saved ${filename}`);
+        res.json({ filePath: fullPath });
 
     } catch (error) {
         console.error(error);
