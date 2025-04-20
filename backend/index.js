@@ -54,6 +54,32 @@ app.post('/generate', async (req, res) => {
     }
 });
 
+app.post('/test', async (req, res) => {
+    const img_url = 'https://i.ibb.co/Z64WVNt0/cat.png';
+
+    try {
+        // Download the image first
+        const response = await fetch(img_url);
+        if (!response.ok) throw new Error('Failed to download image');
+
+        const buffer = await response.buffer();
+
+        const filename = `outputs/output_${Date.now()}_${index}.png`;
+        const fullPath = path.join(__dirname, filename);
+
+        await writeFile(fullPath, buffer);
+        console.log(`Saved} ${filename}`);
+        fileUrls.push(`https://${process.env.KOYEB_APP_NAME}.koyeb.app/${filename}`);
+        res.status(200).json({ fileUrl });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Something went wrong' });
+    }
+});
+
+app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
