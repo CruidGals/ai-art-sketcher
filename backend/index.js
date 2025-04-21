@@ -9,11 +9,13 @@ const path = require('path');
 // Start the app
 const app = express();
 app.use(cors());
-app.use(express.json());
 
 // Make sure it uses output folders
-const outputDir = path.resolve(__dirname);
+const outputDir = path.resolve(__dirname, 'outputs');
 app.use('/outputs', express.static(outputDir));
+
+// Middleware for form data handling
+app.use(express.json({limit: '32mb'}));
 
 // Create the replicate instance
 const replicate = new Replicate({
@@ -40,19 +42,43 @@ app.post('/generate', async (req, res) => {
 
         console.log("Replicate output:", output); // output is an array of image URLs
 
-        let fileUrls = [];
         for (const [index, url] of Object.entries(output)) {
             const response = await axios.get(url, { responseType: 'arraybuffer' }); // get binary data
-            const filename = `outputs/output_${Date.now()}_${index}.png`;
-            await writeFile(filename, response.data);
-            console.log(`Saved} ${filename}`);
-            fileUrls.push(`https://${process.env.KOYEB_APP_NAME}.koyeb.app/${filename}`);
+            const filename = `output_${Date.now()}_${index}.png`;
+            const fileUrl = path.join(outputDir, filename);
+            await writeFile(fileUrl, response.data);
+            console.log(`Saved ${filename}`);
         }
-
+        
+        // How can I access the image at this directory
         res.json({output: fileUrls});
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Something went wrong' });
+    }
+});
+
+// Post to imgbb
+app.post('/upload', async (req, res) => {
+    const { image, name, expiration } = req.body;
+
+    try {
+        const form = new FormData();
+    
+        form.append('image', image);
+        form.append('name', name);
+        form.append('expiration', expiration);
+
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
+            method: 'POST',
+            body: form
+        });
+
+        const data = await response.json();
+        console.log(data);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Upload failed.' });
     }
 });
 
@@ -75,11 +101,11 @@ app.post('/generate', async (req, res) => {
 //     }
 // });
 
-app.get('/test', (req, res) => {
-    const filePath = path.join(outputDir, 'outputs/example.png');
-    console.log(`Filepath: ${filePath}`);
-    res.send(filePath);
-});
+// app.get('/test', (req, res) => {
+//     const filePath = path.join(outputDir, 'outputs/example.png');
+//     console.log(`Filepath: ${filePath}`);
+//     res.send(filePath);
+// });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
