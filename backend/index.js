@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const Replicate = require('replicate');
 const axios = require('axios');
+const fs = require('fs');
 const { writeFile } = require('fs').promises;
 const path = require('path');
 
@@ -11,7 +12,7 @@ const app = express();
 app.use(cors());
 
 // Make sure it uses output folders
-const outputDir = path.resolve(__dirname, 'outputs');
+const outputDir = path.resolve(__dirname, '..', '..', 'outputs');
 app.use('/outputs', express.static(outputDir));
 
 // Middleware for form data handling
@@ -24,8 +25,7 @@ const replicate = new Replicate({
 
 // Instantiate the post request
 app.post('/generate', async (req, res) => {
-    const image = req.body.image;
-    const prompt = req.body.prompt;
+    const { image, prompt } = req.body;
 
     // Create the input
     const input = {
@@ -42,11 +42,13 @@ app.post('/generate', async (req, res) => {
 
         console.log("Replicate output:", output); // output is an array of image URLs
 
+        let fileUrls = []
         for (const [index, url] of Object.entries(output)) {
             const response = await axios.get(url, { responseType: 'arraybuffer' }); // get binary data
             const filename = `output_${Date.now()}_${index}.png`;
             const fileUrl = path.join(outputDir, filename);
             await writeFile(fileUrl, response.data);
+            fileUrls.push(fileUrl);
             console.log(`Saved ${filename}`);
         }
         
@@ -64,48 +66,32 @@ app.post('/upload', async (req, res) => {
 
     try {
         const form = new FormData();
-    
+        
+        // Create the form, which contains imageURl, name, and how long it will stay on IMGBB
         form.append('image', image);
         form.append('name', name);
         form.append('expiration', expiration);
 
+        // Post image to imgbb and get the direct link to it
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
             method: 'POST',
             body: form
         });
 
         const data = await response.json();
-        console.log(data);
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: 'Upload failed.' });
     }
 });
 
-// app.post('/test', async (req, res) => {
-//     const imagePath = 'outputs/example.png';
-
-//     try {
-        
-//         // Output into filePath
-//         const filename = `outputs/output_${Date.now()}_1.png`;
-//         const fullPath = path.join(outputDir, filename);
-
-//         await writeFile(fullPath, buffer);
-//         console.log(`Saved ${filename}`);
-//         res.json({ filePath: fullPath });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Something went wrong' });
-//     }
-// });
-
-// app.get('/test', (req, res) => {
-//     const filePath = path.join(outputDir, 'outputs/example.png');
-//     console.log(`Filepath: ${filePath}`);
-//     res.send(filePath);
-// });
+// Use node.js modules to easily get Base64 repr from local computer files
+app.post('/base64', async (req, res) => {
+    const { filePath } = req.body;
+    const imageBuffer = fs.readFileSync(filePath);
+    const base64Image = imageBuffer.toString('base64');
+    res.json({output : base64Image});
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
